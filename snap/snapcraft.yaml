@@ -1,0 +1,208 @@
+name: dlang
+version: &dversion v2.083.0
+summary: D language
+description: |
+  D is a general-purpose programming language with static typing, systems-level access, and C-like syntax. With the D Programming Language, write fast, read fast, and run fast. 
+  Fast code, fast.
+  This snap is maintained by Ernesto Castellotti, and is not necessarily endorsed or officially maintained by the upstream developers.
+ 
+parts:
+  dmd:
+    source: https://github.com/dlang/dmd.git
+    source-tag: *dversion
+    plugin: make
+    makefile: posix.mak
+    make-parameters:
+      - AUTO_BOOTSTRAP=1
+      - RELEASE=1
+      - ENABLE_LTO=1
+    organize:
+      linux/bin32: usr/bin
+      linux/bin64: usr/bin
+      man/man1: usr/share/man/man1
+      man/man5: usr/share/man/man5
+      dmd-boostlicense.txt: usr/share/doc/dlang/dmd-boostlicense.txt
+      samples: usr/share/doc/dlang/samples
+    stage:
+      - -usr/bin/dmd.conf
+      - -linux
+      - -man
+      - -samples
+    stage-packages:
+      - libc6
+      - libc6-dev
+      - gcc
+    build-packages:
+      - curl
+      - make 
+      - g++ 
+  dmd-config:
+    plugin: dump
+    source: .
+    organize:
+      dmd.conf: etc/dmd.conf
+  docs:
+    plugin: dump
+    source: http://downloads.dlang.org/releases/2.x/2.083.0/dmd.2.083.0.linux.zip
+    source-type: zip
+    organize: 
+      dmd2/html: usr/share/doc/dlang/html
+    stage:
+      - -dmd2
+  druntime:
+    source: https://github.com/dlang/druntime.git
+    source-tag: *dversion
+    plugin: make
+    makefile: posix.mak
+    make-parameters:
+      - DMD_DIR=../../dmd/build
+      - PIC=1
+      - CFLAGS=$(MODEL_FLAG) -fPIC -DHAVE_UNISTD_H -O3 -Wa,-mrelax-relocations=no
+    override-pull: |
+      snapcraftctl pull
+      sed -i 's/DMD_DIR=..\/dmd//' posix.mak
+    organize:
+      generated/linux/release/32/libdruntime.a: usr/lib/i386-linux-gnu/libdruntime.a
+      generated/linux/release/64/libdruntime.a: usr/lib/x86_64-linux-gnu/libdruntime.a
+      src/druntime/import: usr/include/dlang/dmd
+      druntime-LICENSE.txt: usr/share/doc/dlang/druntime-LICENSE.txt
+    stage:
+      - -src
+    build-packages:
+      - gcc
+    after:
+      - dmd
+  libphobos:
+    source: https://github.com/dlang/phobos.git
+    source-tag: *dversion
+    plugin: make
+    makefile: posix.mak
+    make-parameters:
+      - DMD_DIR=../../dmd/build
+      - DRUNTIME_PATH=../../druntime/build
+      - VERSION=../../dmd/build/VERSION
+      - CFLAGS=$(MODEL_FLAG) -fPIC -DHAVE_UNISTD_H -O3 -Wa,-mrelax-relocations=no
+      - PIC=1
+    override-pull: |
+      snapcraftctl pull
+      sed -i 's/DMD_DIR=..\/dmd//' posix.mak
+      sed -i 's/DRUNTIME_PATH = ..\/druntime//' posix.mak
+    organize:
+      linux/lib32: usr/lib/i386-linux-gnu
+      linux/lib64: usr/lib/x86_64-linux-gnu
+      src/phobos: usr/include/dlang/dmd
+      phobos-LICENSE.txt: usr/share/doc/dlang/phobos-LICENSE.txt
+    stage:
+      - -linux
+      - -src
+    build-packages:
+      - gcc
+    after:
+      - dmd
+      - druntime
+  dtools:
+    source: https://github.com/dlang/tools.git
+    source-tag: *dversion
+    plugin: make
+    makefile: posix.mak
+    make-parameters:
+      - DMD_DIR=../../dmd/build
+      - DRUNTIME_PATH=../../druntime/build
+      - PHOBOS_PATH=../../libphobos/build
+    override-pull: |
+      snapcraftctl pull
+      sed -i 's/DMD_DIR=..\/dmd//' posix.mak
+      sed -i 's/DRUNTIME_PATH = ..\/druntime//' posix.mak
+      sed -i 's/PHOBOS_PATH = ..\/phobos//' posix.mak
+    organize:
+      bin: usr/bin
+    stage:
+      - -bin
+    build-packages:
+    - libcurl4-openssl-dev
+    after:
+    - dmd
+    - druntime
+    - libphobos
+  dub:
+    source: https://github.com/dlang/dub.git
+    source-tag: v1.12.0
+    plugin: dump
+    override-pull: |
+      snapcraftctl pull
+        echo 'module dub.version_;' > source/dub/version_.d
+        echo 'enum dubVersion = "1.12.0";' >> source/dub/version_.d
+    override-build: |
+        ../../../stage/usr/bin/dmd -I../../../stage/usr/include/dlang/dmd -L-L../../../stage/usr/lib/$SNAPCRAFT_ARCH_TRIPLET -L--export-dynamic -fPIC -ofbin/dub -w -O -g -version=DubUseCurl -Isource -L-lcurl @build-files.txt
+        install -Dm755 bin/dub "$SNAPCRAFT_PART_INSTALL/usr/bin/dub"
+        install -Dm644 LICENSE "$SNAPCRAFT_PART_INSTALL/usr/share/doc/dlang/dub-LICENSE"
+        install -Dm644 scripts/bash-completion/dub.bash "$SNAPCRAFT_PART_INSTALL/usr/share/bash-completion/completions/dub"
+    after:
+      - dmd
+      - druntime
+      - libphobos
+  dcd:
+    source: https://github.com/dlang-community/DCD.git
+    plugin: make
+    makefile: makefile
+    make-parameters:
+      - DMD=../../../stage/usr/bin/dmd -I../../../stage/usr/include/dlang/dmd -L-L../../../stage/usr/lib/$SNAPCRAFT_ARCH_TRIPLET -L--export-dynamic -fPIC
+    artifacts:
+      - bin/dcd-server
+      - bin/dcd-client
+      - man1
+      - License.txt
+    organize:
+      bin: usr/bin
+      man1: usr/share/man/man1
+      License.txt: usr/share/doc/dlang/dcd-LICENSE
+    stage:
+      - -bin
+      - -man1
+    override-pull: |
+      snapcraftctl pull
+      sed -i "s/DMD := dmd/DMD ?= dmd/" makefile
+    override-build: |
+      snapcraftctl build
+      mkdir -p "$SNAPCRAFT_PART_INSTALL/etc"
+      echo "/snap/dlang/current/usr/include/dlang/dmd" > "$SNAPCRAFT_PART_INSTALL/etc/dcd.conf"
+    after:
+      - dmd
+      - druntime
+      - libphobos
+  dscanner:
+    source: https://github.com/dlang-community/D-Scanner.git
+    plugin: make
+    makefile: makefile
+    make-parameters:
+      - DC=../../../stage/usr/bin/dmd -I../../../stage/usr/include/dlang/dmd -L-L../../../stage/usr/lib/$SNAPCRAFT_ARCH_TRIPLET -L--export-dynamic -fPIC
+    artifacts:
+      - bin/dscanner
+      - LICENSE_1_0.txt
+    organize:
+      bin: usr/bin
+      LICENSE_1_0.txt: usr/share/doc/dlang/dscanner-LICENSE_1_0.txt
+    stage:
+      - -bin
+    after:
+      - dmd
+      - druntime
+      - libphobos
+  dfmt:
+    source: https://github.com/dlang-community/dfmt.git
+    plugin: make
+    makefile: makefile
+    make-parameters:
+      - DC=../../../stage/usr/bin/dmd -I../../../stage/usr/include/dlang/dmd -L-L../../../stage/usr/lib/$SNAPCRAFT_ARCH_TRIPLET -L--export-dynamic -fPIC
+    artifacts:
+      - bin/dfmt
+      - LICENSE.txt
+    organize:
+      bin: usr/bin
+      LICENSE.txt: usr/share/doc/dlang/dfmt-LICENSE.txt
+    stage:
+      - -bin
+    after:
+      - dmd
+      - druntime
+      - libphobos
