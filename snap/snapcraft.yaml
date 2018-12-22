@@ -1,4 +1,5 @@
 name: dlang
+base: core18
 version: &dversion v2.083.1
 summary: D language
 description: |
@@ -45,7 +46,6 @@ parts:
       - -man
       - -samples
     stage-packages:
-      - libc6
       - libc6-dev
       - gcc
     build-packages:
