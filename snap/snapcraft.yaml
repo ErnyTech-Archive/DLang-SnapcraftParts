@@ -7,6 +7,22 @@ description: |
   This snap is maintained by Ernesto Castellotti, and is not necessarily endorsed or officially maintained by the upstream developers.
  
 parts:
+  dlang:
+    plugin: nil
+    after:
+      - dmd
+      - dmd-config
+      - druntime
+      - libphobos
+  dlang-extra:
+    plugin: nil
+    after:
+      - dlang-docs
+      - dtools
+      - dub
+      - dcd
+      - dscanner
+      - dfmt
   dmd:
     source: https://github.com/dlang/dmd.git
     source-tag: *dversion
