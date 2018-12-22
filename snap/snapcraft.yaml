@@ -41,7 +41,7 @@ parts:
     source: .
     organize:
       dmd.conf: etc/dmd.conf
-  docs:
+  dlang-docs:
     plugin: dump
     source: http://downloads.dlang.org/releases/2.x/2.083.1/dmd.2.083.1.linux.zip
     source-type: zip
