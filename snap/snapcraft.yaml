@@ -1,6 +1,6 @@
 name: dlang
 base: core18
-version: &dversion v2.083.1
+version: &dversion v2.084.0
 summary: D language
 description: |
   D is a general-purpose programming language with static typing, systems-level access, and C-like syntax. With the D Programming Language, write fast, read fast, and run fast. 
@@ -59,7 +59,7 @@ parts:
       dmd.conf: etc/dmd.conf
   dlang-docs:
     plugin: dump
-    source: http://downloads.dlang.org/releases/2.x/2.083.1/dmd.2.083.1.linux.zip
+    source: http://downloads.dlang.org/releases/2.x/2.083.1/dmd.2.084.0.linux.zip
     source-type: zip
     organize: 
       dmd2/html: usr/share/doc/dlang/html
@@ -142,7 +142,7 @@ parts:
     - libphobos
   dub:
     source: https://github.com/dlang/dub.git
-    source-tag: v1.12.1
+    source-tag: v1.13.0
     plugin: dump
     override-pull: |
       snapcraftctl pull
