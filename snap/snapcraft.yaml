@@ -59,7 +59,7 @@ parts:
       dmd.conf: etc/dmd.conf
   dlang-docs:
     plugin: dump
-    source: http://downloads.dlang.org/releases/2.x/2.083.1/dmd.2.084.0.linux.zip
+    source: http://downloads.dlang.org/releases/2.x/2.084.0/dmd.2.084.0.linux.zip
     source-type: zip
     organize: 
       dmd2/html: usr/share/doc/dlang/html
